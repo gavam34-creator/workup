@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WORKUP — клиент для Minecraft 1.20.1</title>
+<meta name="description" content="WORKUP — игровой мод/клиент в стиле лаунчера для Minecraft 1.20.1 (Fabric). HvH-арсенал, конфиг-коды, кастомное меню. Скачай лаунчер.">
+<style>
+  :root {
+    --bg0:#060912; --bg1:#0d1830; --card:#0d1220; --card-hi:#131a2e;
+    --line:rgba(255,255,255,.08);
+    --cyan:#00E5FF; --violet:#8B5CF6; --green:#4ADE80; --pink:#FF2A6D;
+    --text:#EDF1F9; --dim:#8A93A8;
+    --radius:16px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body {
+    font-family:"Segoe UI", "Inter", system-ui, -apple-system, sans-serif;
+    background:
+      radial-gradient(900px 500px at 12% -5%, rgba(0,229,255,.16), transparent 60%),
+      radial-gradient(800px 600px at 88% 8%, rgba(139,92,246,.20), transparent 55%),
+      linear-gradient(180deg, var(--bg0), var(--bg1) 40%, var(--bg0));
+    background-attachment:fixed;
+    color:var(--text);
+    min-height:100vh;
+    overflow-x:hidden;
+  }
+  a { color:var(--cyan); text-decoration:none; }
+
+  /* ---- верхняя панель ---- */
+  header {
+    position:sticky; top:0; z-index:10;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 6vw;
+    background:rgba(6,9,18,.72);
+    backdrop-filter:blur(12px);
+    border-bottom:1px solid var(--line);
+  }
+  .logo {
+    font-weight:800; letter-spacing:3px; font-size:18px;
+    background:linear-gradient(90deg, var(--cyan), var(--violet));
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+  }
+  nav { display:flex; gap:22px; font-size:14px; }
+  nav a { color:var(--dim); transition:.2s; }
+  nav a:hover { color:var(--text); }
+
+  .btn-dl-header {
+    padding:9px 18px; border-radius:10px; font-weight:700; font-size:13px;
+    background:linear-gradient(90deg, var(--cyan), var(--violet));
+    color:#fff; box-shadow:0 0 22px rgba(0,229,255,.35);
+    transition:transform .2s, box-shadow .2s;
+  }
+  .btn-dl-header:hover { transform:translateY(-1px); box-shadow:0 0 30px rgba(0,229,255,.55); }
+
+  /* ---- герой ---- */
+  .hero {
+    text-align:center; padding:120px 6vw 90px; position:relative;
+  }
+  .hero h1 {
+    font-size:clamp(40px, 7vw, 74px); font-weight:900; letter-spacing:8px;
+    background:linear-gradient(90deg, var(--cyan), var(--violet), var(--green));
+    background-size:200% 100%;
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+    animation:slide 6s linear infinite;
+  }
+  @keyframes slide { to { background-position:200% 0; } }
+  .hero p { color:var(--dim); margin-top:18px; font-size:clamp(15px,2vw,19px); }
+  .hero .sub { color:var(--cyan); margin-top:6px; font-size:13px; letter-spacing:2px; }
+
+  .cta { margin-top:42px; display:flex; gap:18px; justify-content:center; flex-wrap:wrap; }
+  .btn {
+    display:inline-block; padding:16px 34px; border-radius:14px;
+    font-weight:800; font-size:16px; letter-spacing:.5px; transition:.25s;
+  }
+  .btn-primary { background:linear-gradient(90deg, var(--cyan), var(--violet)); color:#fff; box-shadow:0 8px 34px rgba(0,229,255,.35); }
+  .btn-primary:hover { transform:translateY(-2px) scale(1.02); box-shadow:0 12px 44px rgba(139,92,246,.5); }
+  .btn-ghost { border:1px solid var(--line); color:var(--text); background:rgba(255,255,255,.04); }
+  .btn-ghost:hover { border-color:var(--cyan); color:var(--cyan); }
+
+  .meta { margin-top:30px; color:#607088; font-size:13px; }
+
+  /* ---- секции ---- */
+  section { padding:70px 6vw; }
+  .wrap { max-width:1080px; margin:0 auto; }
+  h2 {
+    font-size:clamp(26px,4vw,40px); font-weight:800; letter-spacing:2px;
+    margin-bottom:12px; text-align:center;
+  }
+  .tagline { text-align:center; color:var(--dim); margin-bottom:44px; }
+
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:18px; }
+  .card {
+    background:linear-gradient(180deg, var(--card-hi), var(--card));
+    border:1px solid var(--line); border-radius:var(--radius);
+    padding:26px 24px; position:relative; overflow:hidden;
+    transition:transform .25s, border-color .25s, box-shadow .25s;
+  }
+  .card::before {
+    content:""; position:absolute; inset:0 0 auto 0; height:2px;
+    background:linear-gradient(90deg, var(--cyan), var(--violet));
+    opacity:.7;
+  }
+  .card:hover { transform:translateY(-4px); border-color:rgba(0,229,255,.4); box-shadow:0 10px 40px rgba(0,0,0,.45); }
+  .card .ico { font-size:26px; margin-bottom:12px; }
+  .card h3 { font-size:17px; letter-spacing:1px; margin-bottom:8px; }
+  .card p { color:var(--dim); font-size:14px; line-height:1.55; }
+
+  .pill { display:inline-block; padding:3px 10px; border-radius:999px; font-size:11px; font-weight:700; letter-spacing:1px; }
+
+  /* ---- загрузка ---- */
+  .downloads { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:20px; }
+  .dl-card {
+    background:linear-gradient(180deg, var(--card-hi), var(--card));
+    border:1px solid var(--line); border-radius:var(--radius);
+    padding:34px 30px; text-align:center; transition:.25s;
+  }
+  .dl-card:hover { transform:translateY(-4px); }
+  .dl-card .name { font-weight:800; font-size:18px; letter-spacing:1px; }
+  .dl-card .desc { color:var(--dim); font-size:13px; margin:8px 0 22px; }
+  .dl-size { color:#607088; font-size:12px; margin-top:14px; }
+
+  /* ---- футер ---- */
+  footer {
+    border-top:1px solid var(--line); padding:26px 6vw; text-align:center;
+    color:#607088; font-size:13px;
+  }
+  footer a { color:var(--dim); }
+  footer a:hover { color:var(--cyan); }
+
+  /* ---- частицы ---- */
+  #stars { position:fixed; inset:0; z-index:0; pointer-events:none; }
+  #stars span { position:absolute; width:2px; height:2px; background:var(--cyan); border-radius:50%; opacity:.4; }
+
+  /* ---- окно кода ---- */
+  .code-demo {
+    margin:44px auto 0; max-width:560px;
+    background:rgba(9,14,28,.8); border:1px solid rgba(0,229,255,.25);
+    border-radius:12px; padding:18px 20px;
+    display:flex; gap:10px; padding-left:20px;
+  }
+  .code-demo code { flex:1; color:var(--cyan); font-size:13px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; direction:rtl; text-align:left; }
+  .code-demo .copy { cursor:pointer; color:var(--dim); font-size:13px; user-select:none; }
+
+  @media (max-width:640px){
+    nav { display:none; }
+  }
+</style>
+</head>
+<body>
+<div id="stars"></div>
+
+<header>
+  <div class="logo">WORKUP</div>
+  <nav>
+    <a href="#features">Возможности</a>
+    <a href="#download">Скачать</a>
+    <a href="#faq">FAQ</a>
+  </nav>
+  <a class="btn-dl-header" href="#download">Скачать лаунчер</a>
+</header>
+
+<section class="hero">
+  <h1>WORKUP</h1>
+  <p>Игровой клиент-компаньон для Minecraft 1.20.1</p>
+  <div class="sub">FABRIC &middot; HVH &middot; СТИЛЬ ЛАУНЧЕРА</div>
+
+  <div class="cta">
+    <a class="btn btn-primary" href="WorkupLauncher.exe" download>Скачать WorkupLauncher.exe</a>
+    <a class="btn btn-ghost" href="#features">Что внутри</a>
+  </div>
+  <div class="meta">Windows &middot; Minecraft Java 1.20.1 &middot; Fabric Loader &middot; без регистрации</div>
+</section>
+
+<section id="features">
+  <div class="wrap">
+    <h2>ВОЗМОЖНОСТИ</h2>
+    <div class="tagline">Всё включено из коробки — ничего настраивать не придётся</div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="ico">&#x2694;</div>
+        <h3>HvH-арсенал</h3>
+        <p>KillAura с гибкими ротациями, авто-кликер до 120 CPS с джиттером. Без искусственных ограничений — только твоя тактика.</p>
+      </div>
+      <div class="card">
+        <div class="ico">&#x1F511;</div>
+        <h3>Конфиг-коды</h3>
+        <p>Готовый конфиг помещается в короткий код. Введи код в окне из меню — и настройки применятся мгновенно. Удобно делиться.</p>
+      </div>
+      <div class="card">
+        <div class="ico">&#x1F3A0;</div>
+        <h3>Меню в стиле лаунчера</h3>
+        <p>Главное меню и экран настроек переделаны под фирменный стиль: неоновое стекло, плавные анимации, чистый шрифт.</p>
+      </div>
+      <div class="card">
+        <div class="ico">&#x1F4A1;</div>
+        <h3>Красивые уведомления</h3>
+        <p>Включение функций сопровождается стеклянными карточками с неоновой кромкой и плавным появлением.</p>
+      </div>
+      <div class="card">
+        <div class="ico">&#x1F9E1;</div>
+        <h3>Рабочие аккаунты</h3>
+        <p>Менеджер профилей с быстрым переключением ника — прямо из меню, без перезапуска игры.</p>
+      </div>
+      <div class="card">
+        <div class="ico">&#x26A1;</div>
+        <h3>Мгновенный запуск</h3>
+        <p>Умный лаунчер сам ставит Fabric, Fabric API и мод. Вход в игру — в один клик, без ручной возни.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="download">
+  <div class="wrap">
+    <h2>СКАЧАТЬ</h2>
+    <div class="tagline">Скачай лаунчер, остальное он сделает сам</div>
+
+    <div class="downloads">
+      <div class="dl-card">
+        <div class="name">WORKUP Launcher</div>
+        <div class="desc">Windows &middot; включает мод и все библиотеки</div>
+        <a class="btn btn-primary" href="WorkupLauncher.exe" download>Скачать .exe</a>
+        <div class="dl-size">~1 МБ &middot; сборка от 27 августа 2026</div>
+      </div>
+      <div class="dl-card">
+        <div class="name">Что внутри</div>
+        <div class="desc">Minecraft 1.20.1 + Fabric + Fabric API + WORKUP</div>
+        <a class="btn btn-ghost" href="#install">Инструкция установки</a>
+        <div class="dl-size">Ручная установка не требуется</div>
+      </div>
+    </div>
+
+    <div class="code-demo">
+      <code id="demoCode">WORKUP-CONFIG: ваш конфиг-код выглядит примерно так…</code>
+      <span class="copy" id="copyDemo">copy</span>
+    </div>
+  </div>
+</section>
+
+<section id="install">
+  <div class="wrap">
+    <h2>УСТАНОВКА</h2>
+    <div class="tagline">Три шага — и ты в игре</div>
+    <div class="grid" style="text-align:left">
+      <div class="card">
+        <h3>1. Скачай лаунчер</h3>
+        <p>Нажми кнопку «Скачать .exe» на этой странице.</p>
+      </div>
+      <div class="card">
+        <h3>2. Запусти</h3>
+        <p>Лаунчер сам скачает Minecraft 1.20.1, Fabric и все библиотеки.</p>
+      </div>
+      <div class="card">
+        <h3>3. Играй</h3>
+        <p>Нажми «Играть». В меню мода — открывай функции и применяй конфиг-коды.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="faq">
+  <div class="wrap">
+    <h2>FAQ</h2>
+    <div class="tagline">Частые вопросы</div>
+    <div class="grid">
+      <div class="card">
+        <h3>На какую версию?</h3>
+        <p>Minecraft Java Edition 1.20.1 (Fabric Loader). Ставится лаунчером автоматически.</p>
+      </div>
+      <div class="card">
+        <h3>Нужна ли регистрация?</h3>
+        <p>Нет. Скачал — играешь.</p>
+      </div>
+      <div class="card">
+        <h3>Как поделиться настройками?</h3>
+        <p>Открой меню мода → «config codes» → «Скопировать код». Отправь код другу — он вставит его у себя.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  WORKUP &nbsp;&middot;&nbsp; неофициальный клиент-компаньон &nbsp;&middot;&nbsp;
+  не аффилирован с Mojang Studios &nbsp;&middot;&nbsp;
+  <a href="WorkupLauncher.exe" download>скачать лаунчер</a>
+</footer>
+
+<script>
+  // звёздный фон
+  const starsEl = document.getElementById('stars');
+  for (let i = 0; i < 70; i++) {
+    const s = document.createElement('span');
+    const r = Math.random();
+    s.style.left = (Math.random() * 100) + 'vw';
+    s.style.top = (Math.random() * 100) + 'vh';
+    s.style.width = s.style.height = (1 + r * 2).toFixed(1) + 'px';
+    s.style.background = r > 0.7 ? '#8B5CF6' : '#00E5FF';
+    s.style.opacity = (0.25 + Math.random() * 0.45).toFixed(2);
+    const dur = 3 + Math.random() * 5;
+    s.style.animation = 'slide2 ' + dur + 's ease-in-out infinite';
+    starsEl.appendChild(s);
+  }
+  const style = document.createElement('style');
+  style.textContent = '@keyframes slide2 { 0%,100%{transform:translateY(0)} 50%{transform:translateY(26px)} }';
+  document.head.appendChild(style);
+
+  // копирование кода
+  document.getElementById('copyDemo').addEventListener('click', () => {
+    navigator.clipboard.writeText('WORKUP-CONFIG: СКОПИРУЙТЕ ИЗ МЕНЮ МОДА').then(() => {
+      document.getElementById('copyDemo').textContent = 'copied!';
+      setTimeout(() => document.getElementById('copyDemo').textContent = 'copy', 1500);
+    });
+  });
+</script>
+</body>
+</html>
