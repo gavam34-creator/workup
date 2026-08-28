@@ -4,210 +4,397 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WORKUP — клиент для Minecraft 1.20.1</title>
-<meta name="description" content="WORKUP — игровой мод/клиент в стиле лаунчера для Minecraft 1.20.1 (Fabric). HvH-арсенал, конфиг-коды, кастомное меню. Скачай лаунчер.">
+<meta name="description" content="WORKUP — игровой клиент-компаньон в фирменном платиново-неоновом стиле для Minecraft 1.20.1 (Fabric). HvH-арсенал, конфиг-коды, кастомное меню, стеклянные HUD-чипы, новый лаунчер v3.2.">
 <style>
   :root {
-    --bg0:#060912; --bg1:#0d1830; --card:#0d1220; --card-hi:#131a2e;
-    --line:rgba(255,255,255,.08);
-    --cyan:#00E5FF; --violet:#8B5CF6; --green:#4ADE80; --pink:#FF2A6D;
-    --text:#EDF1F9; --dim:#8A93A8;
-    --radius:16px;
+    --bg0:#04060D;
+    --bg1:#0A0F1E;
+    --glass:rgba(16,22,40,.62);
+    --glass-hi:rgba(24,32,56,.78);
+    --line:rgba(140,164,222,.14);
+    --line-strong:rgba(0,229,255,.32);
+    --cyan:#22E5FF;
+    --violet:#8B5CFF;
+    --green:#34FFB5;
+    --magenta:#FF2BD6;
+    --amber:#FFD84D;
+    --text:#EAF0FF;
+    --dim:#9AA8CA;
+    --faint:#64708F;
+    --radius:18px;
+    --blur:18px;
   }
   * { margin:0; padding:0; box-sizing:border-box; }
   html { scroll-behavior:smooth; }
   body {
-    font-family:"Segoe UI", "Inter", system-ui, -apple-system, sans-serif;
-    background:
-      radial-gradient(900px 500px at 12% -5%, rgba(0,229,255,.16), transparent 60%),
-      radial-gradient(800px 600px at 88% 8%, rgba(139,92,246,.20), transparent 55%),
-      linear-gradient(180deg, var(--bg0), var(--bg1) 40%, var(--bg0));
-    background-attachment:fixed;
+    font-family:"Inter","Segoe UI",system-ui,-apple-system,sans-serif;
     color:var(--text);
     min-height:100vh;
     overflow-x:hidden;
+    background:
+      radial-gradient(1000px 620px at 8% -6%, rgba(34,229,255,.13), transparent 58%),
+      radial-gradient(900px 700px at 96% 4%, rgba(139,92,255,.17), transparent 60%),
+      radial-gradient(700px 600px at 60% 110%, rgba(52,255,181,.10), transparent 55%),
+      linear-gradient(180deg, var(--bg0), var(--bg1) 46%, var(--bg0));
+    background-attachment:fixed;
   }
   a { color:var(--cyan); text-decoration:none; }
 
-  /* ---- верхняя панель ---- */
+  /* ---- слой авроры и звёзд ---- */
+  #stars { position:fixed; inset:0; z-index:0; pointer-events:none; }
+  #stars span { position:absolute; width:2px; height:2px; border-radius:50%; opacity:.5; background:var(--cyan); }
+  .blob { position:fixed; z-index:0; pointer-events:none; border-radius:50%; filter:blur(90px); opacity:.5; }
+  .blob-b1 { width:520px; height:520px; left:-180px; top:-160px; background:radial-gradient(circle, rgba(34,229,255,.4), transparent 65%); animation:drift 26s ease-in-out infinite alternate; }
+  .blob-b2 { width:620px; height:620px; right:-220px; top:30%; background:radial-gradient(circle, rgba(139,92,255,.36), transparent 65%); animation:drift 32s ease-in-out infinite alternate-reverse; }
+  .blob-b3 { width:460px; height:460px; left:28%; bottom:-200px; background:radial-gradient(circle, rgba(52,255,181,.30), transparent 65%); animation:drift 24s ease-in-out infinite alternate; }
+  @keyframes drift { from{ transform:translate(0,0) scale(1);} to { transform:translate(60px,40px) scale(1.12);} }
+  @keyframes rise { 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(30px);} }
+
+  /* ---- скан-сетка ---- */
+  .gridline {
+    position:fixed; inset:0; z-index:0; pointer-events:none; opacity:.5;
+    background-image:
+      linear-gradient(rgba(140,164,222,.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(140,164,222,.05) 1px, transparent 1px);
+    background-size:56px 56px;
+    -webkit-mask-image:radial-gradient(ellipse at 50% 0%, #000 0%, transparent 70%);
+            mask-image:radial-gradient(ellipse at 50% 0%, #000 0%, transparent 70%);
+  }
+
+  .wrap { max-width:1120px; margin:0 auto; padding:0 24px; position:relative; z-index:2; }
+
+  /* ---- шапка ---- */
   header {
-    position:sticky; top:0; z-index:10;
-    display:flex; align-items:center; justify-content:space-between;
-    padding:14px 6vw;
-    background:rgba(6,9,18,.72);
-    backdrop-filter:blur(12px);
+    position:sticky; top:0; z-index:20;
+    backdrop-filter:blur(16px) saturate(140%);
+    -webkit-backdrop-filter:blur(16px) saturate(140%);
+    background:rgba(6,9,20,.55);
     border-bottom:1px solid var(--line);
   }
-  .logo {
-    font-weight:800; letter-spacing:3px; font-size:18px;
-    background:linear-gradient(90deg, var(--cyan), var(--violet));
-    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
-  }
-  nav { display:flex; gap:22px; font-size:14px; }
-  nav a { color:var(--dim); transition:.2s; }
+  .head-in { max-width:1120px; margin:0 auto; padding:14px 24px; display:flex; align-items:center; justify-content:space-between; }
+  .logo { display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:4px; font-size:18px; }
+  .logo .sq { width:22px; height:22px; border-radius:7px; background:linear-gradient(135deg, var(--cyan), var(--violet)); box-shadow:0 0 18px rgba(34,229,255,.55); }
+  .logo em { font-style:normal; background:linear-gradient(90deg, var(--cyan), var(--violet)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+  nav { display:flex; gap:24px; font-size:14px; }
+  nav a { color:var(--dim); transition:.2s; position:relative; }
   nav a:hover { color:var(--text); }
-
-  .btn-dl-header {
-    padding:9px 18px; border-radius:10px; font-weight:700; font-size:13px;
-    background:linear-gradient(90deg, var(--cyan), var(--violet));
-    color:#fff; box-shadow:0 0 22px rgba(0,229,255,.35);
-    transition:transform .2s, box-shadow .2s;
+  nav a::after { content:""; position:absolute; left:0; right:0; bottom:-5px; height:1px; background:linear-gradient(90deg,var(--cyan),var(--violet)); transform:scaleX(0); transition:.25s; transform-origin:left; }
+  nav a:hover::after { transform:scaleX(1); }
+  .btn-ghost-mini {
+    display:inline-flex; align-items:center; gap:8px;
+    padding:9px 18px; border-radius:11px; font-weight:700; font-size:13px;
+    color:var(--text); border:1px solid var(--line);
+    background:rgba(255,255,255,.04); transition:.2s;
   }
-  .btn-dl-header:hover { transform:translateY(-1px); box-shadow:0 0 30px rgba(0,229,255,.55); }
+  .btn-ghost-mini:hover { border-color:var(--cyan); color:var(--cyan); transform:translateY(-1px); }
 
   /* ---- герой ---- */
-  .hero {
-    text-align:center; padding:120px 6vw 90px; position:relative;
+  .hero { position:relative; z-index:2; padding:96px 0 40px; text-align:center; }
+  .chip-row { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-bottom:26px; }
+  .chip {
+    display:inline-flex; align-items:center; gap:8px;
+    padding:7px 14px; border-radius:999px; font-size:11.5px; font-weight:700; letter-spacing:1.2px;
+    color:var(--dim); border:1px solid var(--line);
+    background:var(--glass); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
   }
+  .chip .dot { width:7px; height:7px; border-radius:50%; }
   .hero h1 {
-    font-size:clamp(40px, 7vw, 74px); font-weight:900; letter-spacing:8px;
-    background:linear-gradient(90deg, var(--cyan), var(--violet), var(--green));
-    background-size:200% 100%;
+    font-size:clamp(44px, 8vw, 88px); font-weight:900; letter-spacing:10px; line-height:1;
+    background:linear-gradient(100deg, var(--cyan), var(--violet) 45%, var(--green));
+    background-size:220% 100%;
     -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
-    animation:slide 6s linear infinite;
+    animation:slide 7s linear infinite;
+    filter:drop-shadow(0 0 34px rgba(34,229,255,.28));
   }
-  @keyframes slide { to { background-position:200% 0; } }
-  .hero p { color:var(--dim); margin-top:18px; font-size:clamp(15px,2vw,19px); }
-  .hero .sub { color:var(--cyan); margin-top:6px; font-size:13px; letter-spacing:2px; }
+  @keyframes slide { to { background-position:220% 0; } }
+  .hero p { color:var(--dim); margin-top:18px; font-size:clamp(15px,2vw,18px); }
+  .hero .sub { color:var(--cyan); margin-top:8px; font-size:12.5px; letter-spacing:3px; }
 
-  .cta { margin-top:42px; display:flex; gap:18px; justify-content:center; flex-wrap:wrap; }
+  .stats { display:flex; gap:14px; justify-content:center; flex-wrap:wrap; margin:34px auto 0; }
+  .stat {
+    min-width:150px; padding:16px 20px; border-radius:16px;
+    background:var(--glass); border:1px solid var(--line);
+    backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+  }
+  .stat b { display:block; font-size:22px; font-weight:800; letter-spacing:1px; }
+  .stat span { font-size:11px; color:var(--faint); letter-spacing:1.5px; }
+  .stat[data-a=cyan] b { color:var(--cyan); }
+  .stat[data-a=violet] b { color:var(--violet); }
+  .stat[data-a=green] b { color:var(--green); }
+
+  .cta { margin-top:34px; display:flex; gap:16px; justify-content:center; flex-wrap:wrap; }
   .btn {
-    display:inline-block; padding:16px 34px; border-radius:14px;
-    font-weight:800; font-size:16px; letter-spacing:.5px; transition:.25s;
+    display:inline-flex; align-items:center; justify-content:center; gap:10px;
+    padding:17px 36px; border-radius:14px; font-weight:800; font-size:16px; letter-spacing:.5px; transition:.25s; cursor:pointer;
   }
-  .btn-primary { background:linear-gradient(90deg, var(--cyan), var(--violet)); color:#fff; box-shadow:0 8px 34px rgba(0,229,255,.35); }
-  .btn-primary:hover { transform:translateY(-2px) scale(1.02); box-shadow:0 12px 44px rgba(139,92,246,.5); }
-  .btn-ghost { border:1px solid var(--line); color:var(--text); background:rgba(255,255,255,.04); }
-  .btn-ghost:hover { border-color:var(--cyan); color:var(--cyan); }
+  .btn-primary {
+    color:#03101a;
+    background:linear-gradient(100deg, var(--cyan), var(--violet));
+    box-shadow:0 0 0 1px rgba(255,255,255,.06) inset, 0 12px 40px rgba(34,229,255,.35);
+    position:relative; overflow:hidden;
+  }
+  .btn-primary::before { content:""; position:absolute; inset:0; background:linear-gradient(100deg, transparent 30%, rgba(255,255,255,.35) 50%, transparent 70%); background-size:220% 100%; animation:shine 3.4s ease-in-out infinite; }
+  @keyframes shine { 0%{ background-position:200% 0;} 55%,100% { background-position:-80% 0;} }
+  .btn-primary:hover { transform:translateY(-2px) scale(1.02); box-shadow:0 0 0 1px rgba(255,255,255,.1) inset, 0 16px 54px rgba(139,92,255,.5); }
+  .btn-ghost { border:1px solid var(--line); color:var(--text); background:rgba(255,255,255,.04); backdrop-filter:blur(10px); }
+  .btn-ghost:hover { border-color:var(--cyan); color:var(--cyan); transform:translateY(-2px); }
 
-  .meta { margin-top:30px; color:#607088; font-size:13px; }
+  .meta { margin-top:26px; color:var(--faint); font-size:13px; }
+
+  /* ---- превью лаунчера ---- */
+  .mock { position:relative; z-index:2; margin:64px auto 0; max-width:880px; }
+  .mock-frame {
+    border-radius:22px; overflow:hidden;
+    background:linear-gradient(180deg, rgba(12,17,34,.9), rgba(7,11,24,.9));
+    border:1px solid var(--line);
+    box-shadow:0 30px 90px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.04) inset;
+    backdrop-filter:blur(14px);
+  }
+  .mock-top { display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border-bottom:1px solid var(--line); }
+  .mock-dots { display:flex; gap:7px; }
+  .mock-dots i { width:11px; height:11px; border-radius:50%; }
+  .mock-dots i:nth-child(1){ background:#FF5F6B; }
+  .mock-dots i:nth-child(2){ background:#FFD84D; }
+  .mock-dots i:nth-child(3){ background:#34FFB5; }
+  .mock-logo { font-size:13px; font-weight:800; letter-spacing:3px; }
+  .mock-logo em { font-style:normal; color:var(--cyan); }
+  .mock-dots-mini { width:16px; height:16px; border-radius:5px; background:linear-gradient(135deg,var(--cyan),var(--violet)); }
+  .mock-body { display:grid; grid-template-columns:280px 1fr; gap:20px; padding:22px; text-align:left; }
+  .mock-col h4 { font-size:10.5px; letter-spacing:2px; color:var(--faint); font-weight:700; margin-bottom:10px; }
+  .mock-field {
+    height:40px; border-radius:10px; border:1px solid var(--line-strong);
+    background:rgba(9,13,26,.8); display:flex; align-items:center; gap:10px; padding:0 14px; font-size:13px; color:var(--text); margin-bottom:18px;
+  }
+  .mock-field i { width:14px; height:14px; border-radius:50%; background:var(--cyan); box-shadow:0 0 10px var(--cyan); }
+  .mock-beans { display:flex; gap:8px; margin-bottom:18px; }
+  .mock-beans span { flex:1; text-align:center; padding:9px 0; border-radius:10px; border:1px solid var(--line); font-size:12px; color:var(--dim); background:rgba(255,255,255,.03); }
+  .mock-beans span.on { border-color:var(--cyan); color:#9FEFFF; background:rgba(34,229,255,.10); box-shadow:0 0 16px rgba(34,229,255,.2) inset; }
+  .mock-play {
+    text-align:center; padding:17px; border-radius:13px; font-weight:800; font-size:16px; letter-spacing:2px;
+    color:#03140c; background:linear-gradient(90deg, var(--green), #0FD68C);
+    box-shadow:0 0 34px rgba(52,255,181,.45);
+    animation:breathe 2.6s ease-in-out infinite;
+  }
+  @keyframes breathe { 0%,100%{ box-shadow:0 0 22px rgba(52,255,181,.35);} 50%{ box-shadow:0 0 44px rgba(52,255,181,.6);} }
+  .mock-status { display:flex; align-items:center; gap:10px; font-size:13px; color:var(--green); font-weight:600; margin-bottom:16px; }
+  .mock-status i { width:10px; height:10px; border-radius:50%; background:var(--green); box-shadow:0 0 10px var(--green); animation:blink 1.4s infinite; }
+  @keyframes blink { 0%,100%{ opacity:1;} 50%{ opacity:.45;} }
+  .mock-bar { height:14px; border-radius:7px; background:rgba(9,13,26,.9); border:1px solid var(--line); overflow:hidden; padding:2px; }
+  .mock-bar em { display:block; height:100%; width:74%; border-radius:5px; background:linear-gradient(90deg, var(--cyan), var(--green)); box-shadow:0 0 12px rgba(34,229,255,.5); }
+  .mock-console { min-height:92px; border-radius:12px; background:rgba(7,11,22,.85); border:1px solid var(--line); padding:12px 14px; font-family:"Consolas",monospace; font-size:11.5px; line-height:1.7; color:var(--faint); }
+  .mock-console b { color:var(--cyan); font-weight:400; }
+  .mock-console .ok { color:var(--green); }
 
   /* ---- секции ---- */
-  section { padding:70px 6vw; }
-  .wrap { max-width:1080px; margin:0 auto; }
-  h2 {
-    font-size:clamp(26px,4vw,40px); font-weight:800; letter-spacing:2px;
-    margin-bottom:12px; text-align:center;
-  }
-  .tagline { text-align:center; color:var(--dim); margin-bottom:44px; }
+  section { position:relative; z-index:2; padding:76px 0; }
+  .sec-head { text-align:center; margin-bottom:44px; }
+  .sec-head .tag { font-size:11px; letter-spacing:4px; color:var(--cyan); font-weight:700; }
+  .sec-head h2 { font-size:clamp(26px,4vw,40px); font-weight:800; letter-spacing:2px; margin-top:8px; }
+  .sec-head p { color:var(--dim); margin-top:12px; font-size:15px; }
 
-  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:18px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:18px; }
   .card {
-    background:linear-gradient(180deg, var(--card-hi), var(--card));
+    position:relative; overflow:hidden;
+    background:linear-gradient(180deg, var(--glass-hi), var(--glass));
     border:1px solid var(--line); border-radius:var(--radius);
-    padding:26px 24px; position:relative; overflow:hidden;
+    padding:26px 24px;
+    backdrop-filter:blur(var(--blur)); -webkit-backdrop-filter:blur(var(--blur));
     transition:transform .25s, border-color .25s, box-shadow .25s;
   }
-  .card::before {
-    content:""; position:absolute; inset:0 0 auto 0; height:2px;
+  .card::after {
+    content:""; position:absolute; left:0; top:0; right:0; height:2px;
     background:linear-gradient(90deg, var(--cyan), var(--violet));
-    opacity:.7;
+    opacity:.0; transition:opacity .25s;
   }
-  .card:hover { transform:translateY(-4px); border-color:rgba(0,229,255,.4); box-shadow:0 10px 40px rgba(0,0,0,.45); }
-  .card .ico { font-size:26px; margin-bottom:12px; }
-  .card h3 { font-size:17px; letter-spacing:1px; margin-bottom:8px; }
+  .card:hover { transform:translateY(-5px); border-color:var(--line-strong); box-shadow:0 18px 54px rgba(0,0,0,.5); }
+  .card:hover::after { opacity:.9; }
+  .card .ico-bx {
+    width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center;
+    background:rgba(34,229,255,.08); border:1px solid rgba(34,229,255,.22); margin-bottom:18px;
+  }
+  .card svg { width:22px; height:22px; stroke:var(--cyan); fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  .card:nth-child(2) .ico-bx, .card:nth-child(5) .ico-bx { background:rgba(139,92,255,.1); border-color:rgba(139,92,255,.28); }
+  .card:nth-child(2) svg { stroke:var(--violet); }
+  .card:nth-child(5) svg { stroke:var(--green); }
+  .card h3 { font-size:17px; letter-spacing:.5px; margin-bottom:8px; }
   .card p { color:var(--dim); font-size:14px; line-height:1.55; }
+  .card .mini { display:inline-flex; gap:6px; margin-top:14px; font-size:11px; color:var(--faint); letter-spacing:1px; }
 
-  .pill { display:inline-block; padding:3px 10px; border-radius:999px; font-size:11px; font-weight:700; letter-spacing:1px; }
-
-  /* ---- загрузка ---- */
-  .downloads { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:20px; }
+  /* ---- скачать ---- */
+  .downloads { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:20px; }
   .dl-card {
-    background:linear-gradient(180deg, var(--card-hi), var(--card));
+    position:relative; overflow:hidden; text-align:center;
+    background:linear-gradient(180deg, var(--glass-hi), var(--glass));
     border:1px solid var(--line); border-radius:var(--radius);
-    padding:34px 30px; text-align:center; transition:.25s;
+    padding:36px 30px; transition:.25s;
+    backdrop-filter:blur(var(--blur)); -webkit-backdrop-filter:blur(var(--blur));
   }
-  .dl-card:hover { transform:translateY(-4px); }
-  .dl-card .name { font-weight:800; font-size:18px; letter-spacing:1px; }
-  .dl-card .desc { color:var(--dim); font-size:13px; margin:8px 0 22px; }
-  .dl-size { color:#607088; font-size:12px; margin-top:14px; }
+  .dl-card.featured { border-color:var(--line-strong); }
+  .dl-card.featured::before { content:""; position:absolute; inset:0 0 auto 0; height:2px; background:linear-gradient(90deg, var(--cyan), var(--magenta), var(--green)); opacity:.95; }
+  .dl-card:hover { transform:translateY(-4px); border-color:var(--line-strong); box-shadow:0 18px 60px rgba(0,0,0,.5); }
+  .dl-card .ver { position:absolute; top:16px; right:16px; padding:4px 10px; border-radius:999px; font-size:10.5px; font-weight:700; letter-spacing:1px; color:var(--green); border:1px solid rgba(52,255,181,.35); background:rgba(52,255,181,.08); }
+  .dl-card .name { font-weight:800; font-size:19px; letter-spacing:.5px; }
+  .dl-card .sub { color:var(--dim); font-size:14px; font-weight:600; margin-top:2px; }
+  .dl-card .desc { color:var(--dim); font-size:13px; margin:12px 0 24px; }
+  .dl-size { color:var(--faint); font-size:12px; margin-top:16px; line-height:1.7; }
+  .dl-size a { color:var(--dim); }
+  .dl-size a:hover { color:var(--cyan); }
+
+  .code-demo {
+    margin:40px auto 0; max-width:600px;
+    background:rgba(9,14,28,.85); border:1px solid rgba(34,229,255,.28); border-radius:12px;
+    padding:16px 20px; display:flex; gap:12px; align-items:center;
+    box-shadow:0 0 30px rgba(34,229,255,.08);
+  }
+  .code-demo code { flex:1; color:var(--cyan); font-size:13px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; direction:rtl; text-align:left; }
+  .code-demo .copy { cursor:pointer; color:var(--dim); font-size:13px; user-select:none; flex:none; transition:.2s; }
+  .code-demo .copy:hover { color:var(--cyan); }
+
+  /* ---- установка ---- */
+  .steps { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:20px; counter-reset:step; }
+  .step {
+    background:linear-gradient(180deg, var(--glass-hi), var(--glass));
+    border:1px solid var(--line); border-radius:var(--radius); padding:26px 24px;
+    backdrop-filter:blur(var(--blur)); -webkit-backdrop-filter:blur(var(--blur));
+    transition:.25s; position:relative;
+  }
+  .step:hover { transform:translateY(-4px); border-color:var(--line-strong); }
+  .step .num { width:38px; height:38px; border-radius:11px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:15px; color:#03101a; background:linear-gradient(135deg, var(--cyan), var(--violet)); margin-bottom:16px; box-shadow:0 0 18px rgba(34,229,255,.3); }
+  .step h3 { font-size:16px; margin-bottom:8px; letter-spacing:.5px; }
+  .step p { color:var(--dim); font-size:13.5px; line-height:1.55; }
 
   /* ---- футер ---- */
-  footer {
-    border-top:1px solid var(--line); padding:26px 6vw; text-align:center;
-    color:#607088; font-size:13px;
-  }
+  footer { position:relative; z-index:2; border-top:1px solid var(--line); padding:30px 0; text-align:center; backdrop-filter:blur(10px); background:rgba(6,9,20,.5); }
+  .foot-in { max-width:1120px; margin:0 auto; padding:0 24px; }
+  footer .logo { justify-content:center; margin-bottom:12px; font-size:15px; }
+  footer p { color:var(--faint); font-size:13px; line-height:1.7; }
   footer a { color:var(--dim); }
   footer a:hover { color:var(--cyan); }
 
-  /* ---- частицы ---- */
-  #stars { position:fixed; inset:0; z-index:0; pointer-events:none; }
-  #stars span { position:absolute; width:2px; height:2px; background:var(--cyan); border-radius:50%; opacity:.4; }
-
-  /* ---- окно кода ---- */
-  .code-demo {
-    margin:44px auto 0; max-width:560px;
-    background:rgba(9,14,28,.8); border:1px solid rgba(0,229,255,.25);
-    border-radius:12px; padding:18px 20px;
-    display:flex; gap:10px; padding-left:20px;
-  }
-  .code-demo code { flex:1; color:var(--cyan); font-size:13px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; direction:rtl; text-align:left; }
-  .code-demo .copy { cursor:pointer; color:var(--dim); font-size:13px; user-select:none; }
-
-  @media (max-width:640px){
+  @media (max-width:720px){
     nav { display:none; }
+    .mock-body { grid-template-columns:1fr; }
+    .hero { padding-top:64px; }
   }
 </style>
 </head>
 <body>
 <div id="stars"></div>
+<div class="gridline"></div>
+<div class="blob blob-b1"></div>
+<div class="blob blob-b2"></div>
+<div class="blob blob-b3"></div>
 
 <header>
-  <div class="logo">WORKUP</div>
-  <nav>
-    <a href="#features">Возможности</a>
-    <a href="#download">Скачать</a>
-    <a href="#faq">FAQ</a>
-  </nav>
-  <a class="btn-dl-header" href="#download">Скачать лаунчер</a>
+  <div class="head-in">
+    <div class="logo"><span class="sq"></span><em>WORKUP</em></div>
+    <nav>
+      <a href="#features">Возможности</a>
+      <a href="#download">Скачать</a>
+      <a href="#install">Установка</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <a class="btn-ghost-mini" href="#download">Скачать лаунчер</a>
+  </div>
 </header>
 
 <section class="hero">
+  <div class="chip-row">
+    <span class="chip"><i class="dot" style="background:var(--green)"></i>ОФФЛАЙН-РЕЖИМ</span>
+    <span class="chip"><i class="dot" style="background:var(--cyan)"></i>FABRIC LOADER 1.20.1</span>
+    <span class="chip"><i class="dot" style="background:var(--magenta)"></i>HvH • HVH</span>
+  </div>
   <h1>WORKUP</h1>
   <p>Игровой клиент-компаньон для Minecraft 1.20.1</p>
-  <div class="sub">FABRIC &middot; HVH &middot; СТИЛЬ ЛАУНЧЕРА</div>
+  <div class="sub">ПЛАТИНОВОЕ СТЕКЛО &middot; НЕОНОВЫЕ ЧИПЫ &middot; КОНФИГ-КОДЫ</div>
+
+  <div class="stats">
+    <div class="stat" data-a="cyan"><b>25+</b><span>HUD-МОДУЛЕЙ</span></div>
+    <div class="stat" data-a="green"><b>120</b><span>CPS AUTOCLICK</span></div>
+    <div class="stat" data-a="violet"><b>1.20.1</b><span>FABRIC</span></div>
+  </div>
 
   <div class="cta">
     <a class="btn btn-primary" href="WorkupLauncher.exe" download>Скачать WorkupLauncher.exe</a>
     <a class="btn btn-ghost" href="#features">Что внутри</a>
   </div>
-  <div class="meta">Windows &middot; Minecraft Java 1.20.1 &middot; Fabric Loader &middot; без регистрации</div>
+  <div class="meta">Windows &middot; Minecraft Java 1.20.1 &middot; лаунчер установит всё сам &middot; сборка от 28 августа 2026</div>
 </section>
+
+<div class="wrap">
+  <div class="mock">
+    <div class="mock-frame">
+      <div class="mock-top">
+        <div class="mock-dots"><i></i><i></i><i></i></div>
+        <div class="mock-logo"><em>WORK</em>UP LAUNCHER <span style="color:var(--faint);font-weight:600">v3.2</span></div>
+        <div class="mock-dots-mini"></div>
+      </div>
+      <div class="mock-body">
+        <div class="mock-col">
+          <h4>НИКНЕЙМ</h4>
+          <div class="mock-field"><i></i>Player</div>
+          <h4>ПАМЯТЬ (ОЗУ)</h4>
+          <div class="mock-beans"><span>2 ГБ</span><span>4 ГБ</span><span class="on">6 ГБ</span><span>8 ГБ</span></div>
+          <div class="mock-play">ИГРАТЬ</div>
+        </div>
+        <div class="mock-col">
+          <div class="mock-status"><i></i>  Готов к запуску</div>
+          <div class="mock-bar"><em></em></div>
+          <div style="margin-top:14px"></div>
+          <div class="mock-console">
+            <b>[12:00:01]</b> Установка найдена: fabric-loader-0.16.10-1.20.1<br>
+            <b>[12:00:02]</b> Мод WORKUP v1.5.0<br>
+            <span class="ok">[12:00:03] Minecraft запущен. Приятной игры!</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <section id="features">
   <div class="wrap">
-    <h2>ВОЗМОЖНОСТИ</h2>
-    <div class="tagline">Всё включено из коробки — ничего настраивать не придётся</div>
-
+    <div class="sec-head">
+      <span class="tag">ВОЗМОЖНОСТИ</span>
+      <h2>ВСЁ ВКЛЮЧЕНО ИЗ КОРОБКИ</h2>
+      <p>Стеклянные HUD-чипы, новое меню, визуальные эффекты killaura — ничего донастраивать не придётся</p>
+    </div>
     <div class="grid">
       <div class="card">
-        <div class="ico">&#x2694;</div>
-        <h3>HvH-арсенал</h3>
-        <p>KillAura с гибкими ротациями, авто-кликер до 120 CPS с джиттером. Без искусственных ограничений — только твоя тактика.</p>
+        <div class="ico-bx"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg></div>
+        <h3>KillAura с эффектами</h3>
+        <p>Вращающиеся светящиеся шары, луч-привязка к цели и дыхание силового кольца под ней. Полностью настраивается цветом и формой.</p>
+        <span class="mini">ORBIT FX · BEAM · RING · CORE</span>
       </div>
       <div class="card">
-        <div class="ico">&#x1F511;</div>
+        <div class="ico-bx"><svg viewBox="0 0 24 24"><path d="M2 20h20M5 20V10M12 20V6M19 20V13"/></svg></div>
         <h3>Конфиг-коды</h3>
-        <p>Готовый конфиг помещается в короткий код. Введи код в окне из меню — и настройки применятся мгновенно. Удобно делиться.</p>
+        <p>Готовый конфиг помещается в короткий код. Ввёл код в окне из меню — настройки применились мгновенно. Удобно делиться.</p>
+        <span class="mini">.cfg ADD · SAVE · LOAD</span>
       </div>
       <div class="card">
-        <div class="ico">&#x1F3A0;</div>
-        <h3>Меню в стиле лаунчера</h3>
-        <p>Главное меню и экран настроек переделаны под фирменный стиль: неоновое стекло, плавные анимации, чистый шрифт.</p>
+        <div class="ico-bx"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18M9 4v16"/></svg></div>
+        <h3>Меню-лаунчер</h3>
+        <p>Главное меню и экран настроек переделаны в фирменный стиль: платиновое стекло, неоновая кромка, чистый шрифт.</p>
+        <span class="mini">CUSTOM MENU · ANIMATIONS</span>
       </div>
       <div class="card">
-        <div class="ico">&#x1F4A1;</div>
-        <h3>Красивые уведомления</h3>
-        <p>Включение функций сопровождается стеклянными карточками с неоновой кромкой и плавным появлением.</p>
+        <div class="ico-bx"><svg viewBox="0 0 24 24"><path d="M12 2l2 6 6 2-6 2-2 6-2-6-6-2 6-2z"/></svg></div>
+        <h3>Стеклянные HUD-чипы</h3>
+        <p>FPS, координаты, часы, пинг, биом и скорость (м/с). Каждый чип перетаскивается в HUD-редакторе и живёт на своём месте.</p>
+        <span class="mini">PING · BIOME · SPEED · FPS</span>
       </div>
       <div class="card">
-        <div class="ico">&#x1F9E1;</div>
+        <div class="ico-bx"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg></div>
         <h3>Рабочие аккаунты</h3>
         <p>Менеджер профилей с быстрым переключением ника — прямо из меню, без перезапуска игры.</p>
+        <span class="mini">PROFILE SWITCH · INSTANT</span>
       </div>
       <div class="card">
-        <div class="ico">&#x26A1;</div>
+        <div class="ico-bx"><svg viewBox="0 0 24 24"><path d="M13 2L4 14h6l-1 8 9-12h-6z"/></svg></div>
         <h3>Мгновенный запуск</h3>
-        <p>Умный лаунчер сам ставит Fabric, Fabric API и мод. Вход в игру — в один клик, без ручной возни.</p>
+        <p>Лаунчер v3.2 сам ставит Java 17, Minecraft, Fabric и мод. Вход в игру — в один клик и без ручной возни.</p>
+        <span class="mini">JAVA 17 · FABRIC API · AUTO</span>
       </div>
     </div>
   </div>
@@ -215,19 +402,28 @@
 
 <section id="download">
   <div class="wrap">
-    <h2>СКАЧАТЬ</h2>
-    <div class="tagline">Скачай лаунчер, остальное он сделает сам</div>
-
+    <div class="sec-head">
+      <span class="tag">СКАЧАТЬ</span>
+      <h2>ТРИ ШАГА — И ТЫ В ИГРЕ</h2>
+      <p>Скачай лаунчер, остальное он сделает сам</p>
+    </div>
     <div class="downloads">
-      <div class="dl-card">
+      <div class="dl-card featured">
+        <span class="ver">v3.2 · 28.08.2026</span>
         <div class="name">WORKUP Launcher</div>
-        <div class="desc">Windows &middot; включает мод и все библиотеки</div>
+        <div class="sub">Windows · 1.20.1 · Fabric</div>
+        <div class="desc">Скачает Java 17, Minecraft, Fabric Loader, Fabric API — и установит мод одной кнопкой</div>
         <a class="btn btn-primary" href="WorkupLauncher.exe" download>Скачать .exe</a>
-        <div class="dl-size">~1 МБ &middot; сборка от 28 августа 2026 &middot; прямая ссылка (GitHub): <a href="https://github.com/gavam34-creator/workup/releases/latest/download/WorkupLauncher.exe">скачать с GitHub</a> &middot; <a href="https://github.com/gavam34-creator/workup">репозиторий</a></div>
+        <div class="dl-size">
+          ~1 МБ · прямая ссылка (GitHub):
+          <a href="https://github.com/gavam34-creator/workup/releases/latest/download/WorkupLauncher.exe">скачать с GitHub</a><br>
+          <a href="https://github.com/gavam34-creator/workup">репозиторий проекта</a>
+        </div>
       </div>
       <div class="dl-card">
         <div class="name">Что внутри</div>
-        <div class="desc">Minecraft 1.20.1 + Fabric + Fabric API + WORKUP</div>
+        <div class="sub">Без регистрации</div>
+        <div class="desc">Minecraft 1.20.1 + Fabric + Fabric API + WORKUP. Устанавливается лаунчером автоматически</div>
         <a class="btn btn-ghost" href="#install">Инструкция установки</a>
         <div class="dl-size">Ручная установка не требуется</div>
       </div>
@@ -242,20 +438,25 @@
 
 <section id="install">
   <div class="wrap">
-    <h2>УСТАНОВКА</h2>
-    <div class="tagline">Три шага — и ты в игре</div>
-    <div class="grid" style="text-align:left">
-      <div class="card">
-        <h3>1. Скачай лаунчер</h3>
-        <p>Нажми кнопку «Скачать .exe» на этой странице.</p>
+    <div class="sec-head">
+      <span class="tag">УСТАНОВКА</span>
+      <h2>НАЧАТЬ МОЖНО ПРЯМО СЕЙЧАС</h2>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="num">1</div>
+        <h3>Скачай лаунчер</h3>
+        <p>Нажми кнопку «Скачать .exe» на этой странице — файл весит около мегабайта.</p>
       </div>
-      <div class="card">
-        <h3>2. Запусти</h3>
-        <p>Лаунчер сам скачает Minecraft 1.20.1, Fabric и все библиотеки.</p>
+      <div class="step">
+        <div class="num">2</div>
+        <h3>Запусти</h3>
+        <p>Лаунчер сам скачает Java 17, Minecraft 1.20.1, Fabric и все библиотеки. Просто нажми «УСТАНОВИТЬ ВСЁ».</p>
       </div>
-      <div class="card">
-        <h3>3. Играй</h3>
-        <p>Нажми «Играть». В меню мода — открывай функции и применяй конфиг-коды.</p>
+      <div class="step">
+        <div class="num">3</div>
+        <h3>Играй</h3>
+        <p>Нажми «ИГРАТЬ». В меню мода — открывай функции, двигай HUD-чипы и применяй конфиг-коды.</p>
       </div>
     </div>
   </div>
@@ -263,8 +464,10 @@
 
 <section id="faq">
   <div class="wrap">
-    <h2>FAQ</h2>
-    <div class="tagline">Частые вопросы</div>
+    <div class="sec-head">
+      <span class="tag">FAQ</span>
+      <h2>ЧАСТЫЕ ВОПРОСЫ</h2>
+    </div>
     <div class="grid">
       <div class="card">
         <h3>На какую версию?</h3>
@@ -272,40 +475,59 @@
       </div>
       <div class="card">
         <h3>Нужна ли регистрация?</h3>
-        <p>Нет. Скачал — играешь.</p>
+        <p>Нет. Скачал — запустил — играешь оффлайн-профилем без регистрации.</p>
       </div>
       <div class="card">
         <h3>Как поделиться настройками?</h3>
-        <p>Открой меню мода → «config codes» → «Скопировать код». Отправь код другу — он вставит его у себя.</p>
+        <p>Открой меню мода → config codes → «Скопировать код». Отправь код другу — он вставит его у себя.</p>
       </div>
     </div>
   </div>
 </section>
 
 <footer>
-  WORKUP &nbsp;&middot;&nbsp; неофициальный клиент-компаньон &nbsp;&middot;&nbsp;
-  не аффилирован с Mojang Studios &nbsp;&middot;&nbsp;
-  <a href="WorkupLauncher.exe" download>скачать лаунчер</a>
+  <div class="foot-in">
+    <div class="logo"><span class="sq"></span><em>WORKUP</em></div>
+    <p>
+      WORKUP &middot; неофициальный клиент-компаньон &middot; не аффилирован с Mojang Studios &middot;
+      <a href="WorkupLauncher.exe" download>скачать лаунчер</a> &middot;
+      <a href="https://github.com/gavam34-creator/workup">GitHub</a>
+    </p>
+  </div>
 </footer>
 
 <script>
-  // звёздный фон
+  // звёздный слой
   const starsEl = document.getElementById('stars');
-  for (let i = 0; i < 70; i++) {
+  for (let i = 0; i < 90; i++) {
     const s = document.createElement('span');
     const r = Math.random();
     s.style.left = (Math.random() * 100) + 'vw';
     s.style.top = (Math.random() * 100) + 'vh';
     s.style.width = s.style.height = (1 + r * 2).toFixed(1) + 'px';
-    s.style.background = r > 0.7 ? '#8B5CF6' : '#00E5FF';
-    s.style.opacity = (0.25 + Math.random() * 0.45).toFixed(2);
-    const dur = 3 + Math.random() * 5;
-    s.style.animation = 'slide2 ' + dur + 's ease-in-out infinite';
+    s.style.background = r > 0.7 ? '#8B5CFF' : '#22E5FF';
+    s.style.opacity = (0.2 + Math.random() * 0.5).toFixed(2);
+    s.style.animation = 'rise ' + (3 + Math.random() * 5).toFixed(1) + 's ease-in-out infinite';
+    s.style.animationDelay = -Math.random() * 5 + 's';
     starsEl.appendChild(s);
   }
-  const style = document.createElement('style');
-  style.textContent = '@keyframes slide2 { 0%,100%{transform:translateY(0)} 50%{transform:translateY(26px)} }';
-  document.head.appendChild(style);
+
+  // появление карточек при прокрутке
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((en, idx) => {
+      if (!en.isIntersecting) return;
+      en.target.style.transition = 'opacity .6s ease, transform .6s ease';
+      en.target.style.transitionDelay = (idx * 60) + 'ms';
+      en.target.style.opacity = '1';
+      en.target.style.transform = 'none';
+      io.unobserve(en.target);
+    });
+  }, { threshold: 0.08 });
+  document.querySelectorAll('.card, .dl-card, .step, .stat').forEach((el) => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(22px)';
+    io.observe(el);
+  });
 
   // копирование кода
   document.getElementById('copyDemo').addEventListener('click', () => {
